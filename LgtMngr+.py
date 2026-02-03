@@ -641,7 +641,7 @@ class LightManagerUI(): #  Main UI class for Light Manager +
         if cmds.window(self.window, exists=True):
             cmds.deleteUI(self.window)
         
-        cmds.window(self.window, width=500, height=475, bgc=[0.2, 0.2, 0.2], sizeable=True)
+        cmds.window(self.window, width=780, height=600, bgc=[0.2, 0.2, 0.2], sizeable=True)
         cmds.scrollLayout(childResizable=True)
         layout = cmds.columnLayout(adjustableColumn=True)
         
