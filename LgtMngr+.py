@@ -504,6 +504,7 @@ class LightManagerFunctions: # Core functionality for Light Manager +
             total_lights_list = self.get_total_lights_list()
             cmds.textScrollList(light_selector, e=True, append=total_lights_list)
             cmds.text(lights_found_text, e=True, label="               Lights: " + str(len(total_lights_list)))
+            
         except:
             cmds.textScrollList(light_selector, e=True, removeAll=True)
             cmds.text(lights_found_text, e=True, label="               Lights: 0")
@@ -535,8 +536,14 @@ class LightManagerFunctions: # Core functionality for Light Manager +
                 cmds.rename(obj[0], light + "_" + str(i))
             
             cmds.confirmDialog(title="Status", message='Sanity check passed successfully!\nLights renamed with unique id')
+            launcher.createUI()
+            self.refresh_ui(launcher.lightSelector, launcher.lgtsFound)
         except:
             pass
+
+        
+
+
 
 
 # ==================== Functions Wrappers ====================
