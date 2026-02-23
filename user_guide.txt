@@ -1,0 +1,29 @@
+User Guide for Light Manager Maya
+================================
+
+Overview:
+---------
+Light Manager Maya is a tool designed to help you manage, organize, and control lights within your Maya scenes efficiently. It provides a user-friendly interface for quick access to light attributes and batch operations.
+
+Features:
+---------
+- List all lights in the current scene
+- Select, rename, and delete lights
+- Adjust intensity, color, and other attributes
+- Group and organize lights
+- Scatter lights into selected objects, or create light rigs.
+- Batch edit multiple lights
+
+How to Use:
+-----------
+1. Launch the tool as described in installation.txt.
+2. The main window will display a list of all lights in your scene.
+3. Select a light to view and edit its properties.
+4. Use the provided controls to adjust intensity, color, visibility, and other attributes.
+5. To batch edit, select multiple lights and use the batch controls.
+6. Use the refresh button if you add or remove lights in the scene while the tool is open.
+
+
+Support:
+--------
+For issues, suggestions, or contributions, please refer to the README.md or contact the project maintainer.
