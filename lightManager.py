@@ -261,7 +261,7 @@ class ColorButton(QPushButton):
         r, g, b = self._color
         self.setStyleSheet(
             f"QPushButton {{ background-color: rgb({int(r*255)},{int(g*255)},{int(b*255)}); "
-            f"border: 1px solid #1A1A1A; min-width: 60px; min-height: 20px; }}"
+            f"border: 1px solid #1A1A1A; min-width: 30px; min-height: 15px; }}"
             f"QPushButton:hover {{ background-color: rgb({int(r*255)},{int(g*255)},{int(b*255)}); "
             f"border: 1px solid #5D5D5D; }}"
             f"QPushButton:pressed {{ background-color: rgb({int(r*255)},{int(g*255)},{int(b*255)}); "
