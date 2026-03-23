@@ -1,10 +1,10 @@
 How to Install Light manager + for Maya
 
-1. Copy the entire light_manager_maya folder to a location accessible by Maya.
+1. Place the entire light_manager_maya folder to your prefered location.
 2. Open Maya and go to the Script Editor.
 3. In the Python tab, paste the following code:
 
-exec(open(r"path\to\light_manager_maya\LgtMngr+.py").read())
+exec(open(r"path\to\light_manager_maya\lightManager.py").read())
 
 Replace 'path\to\light_manager_maya' with the actual path where you placed the folder.
 
