@@ -7,6 +7,11 @@ www.miguelagenjo.com
 
 import os
 import random
+import json
+import tempfile
+from typing import List, Dict
+from pathlib import Path
+from datetime import datetime
 
 # Maya imports
 try:
@@ -321,10 +326,249 @@ class LightManagerFunctions:
     RGB = ["R", "G", "B"]
     XYZ = ["X", "Y", "Z"]
     DEFAULT_VALUES = {"intensity": 1, "aiExposure": 1, "aiSamples": 1,
-                      "color": (1, 1, 1), "aiColorTemperature": 6500, "aiUseColorTemperature": 0}
+                      "color": (1, 1, 1), "aiColorTemperature": 6500, "aiUseColorTemperature": 0,
+                      "coneAngle": 30, "penumbraAngle": 0, "dropoff": 0, "decayRate": 2,
+                      "aiSpread": 1, "normalize": 1, "aiRoundness": 0,
+                      "aiSoftEdge": 0, "aiCastShadows": 1, "aiShadowDensity": 1, "aiShadowColor": (0, 0, 0),
+                      "aiCamera": 0, "aiDiffuse": 1, "aiSpecular": 1, "aiSss": 1, "aiVolume": 1, "aiIndirect": 1}
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def _normalize_attr_value(value):
+        """Flatten Maya getAttr outputs like [(r, g, b)] to JSON-friendly values."""
+        if isinstance(value, list) and len(value) == 1 and isinstance(value[0], (list, tuple)):
+            return list(value[0])
+        if isinstance(value, tuple):
+            return list(value)
+        return value
+
+    @staticmethod
+    def _resolve_light_node(node):
+        """Resolve a transform or shape to a light shape node."""
+        try:
+            if not cmds.objExists(node):
+                return None
+
+            node_type = cmds.objectType(node)
+            if "light" in node_type.lower():
+                return node
+
+            shapes = cmds.listRelatives(node, shapes=True, fullPath=False) or []
+            for shape in shapes:
+                shape_type = cmds.objectType(shape)
+                if "light" in shape_type.lower():
+                    return shape
+        except:
+            pass
+        return None
+
+    def get_selected_light_nodes(self):
+        """Return unique selected light shape nodes."""
+        selected = cmds.ls(selection=True) or []
+        resolved = []
+        for node in selected:
+            light_node = self._resolve_light_node(node)
+            if light_node and light_node not in resolved:
+                resolved.append(light_node)
+        return resolved
+
+    def get_arnold_attributes(self, shapes):
+        """Get Arnold attributes available on the first light shape."""
+        arnold_attrs = []
+        try:
+            if not shapes:
+                return arnold_attrs
+
+            shape = shapes[0]
+            attrs = cmds.listAttr(shape) or []
+            for attr_name in attrs:
+                if attr_name.startswith("ai") and attr_name not in self.BLACK_LIST and attr_name not in arnold_attrs:
+                    arnold_attrs.append(attr_name)
+        except:
+            pass
+        return arnold_attrs
+
+    def collect_light_properties(self, lights: List[str]) -> Dict:
+        """Collect all properties from selected lights"""
+        properties = {"lights": []}
+
+        for light in lights:
+            try:
+                shapes = cmds.listRelatives(light, shapes=True)
+                if shapes:
+                    shape = shapes[0]
+                    light_data = {
+                        "name": light,
+                        "type": cmds.objectType(shape),
+                        "attributes": {},
+                        "transform": {}
+                    }
+                    
+                    # Collect transform attributes from the light's transform node
+                    transform_attrs = cmds.listAttr(light, keyable=True) or []
+                    for attr in transform_attrs:
+                        if any(keyword in attr.lower() for keyword in ["translate", "rotate", "scale", "shear"]):
+                            try:
+                                attr_path = light + "." + attr
+                                attr_value = cmds.getAttr(attr_path)
+                                if isinstance(attr_value, (list, tuple)):
+                                    if len(attr_value) == 1:
+                                        light_data["transform"][attr] = attr_value[0]
+                                    else:
+                                        light_data["transform"][attr] = list(attr_value)
+                                else:
+                                    light_data["transform"][attr] = attr_value
+                            except:
+                                pass
+
+                    # Get all keyable attributes from the light shape
+                    all_attrs = cmds.listAttr(shape, keyable=True) or []
+                    for attr in all_attrs:
+                        try:
+                            attr_path = shape + "." + attr
+                            attr_value = cmds.getAttr(attr_path)
+                            if isinstance(attr_value, (list, tuple)):
+                                if len(attr_value) == 1:
+                                    light_data["attributes"][attr] = attr_value[0]
+                                else:
+                                    light_data["attributes"][attr] = list(attr_value)
+                            else:
+                                light_data["attributes"][attr] = attr_value
+                        except:
+                            pass
+
+                    # Get Arnold attributes
+                    arnold_attrs = self.get_arnold_attributes(shapes)
+                    
+                    for attr in arnold_attrs:
+                        try:
+                            attr_path = shape + "." + attr
+                            attr_value = cmds.getAttr(attr_path)
+                            if isinstance(attr_value, (list, tuple)):
+                                if len(attr_value) == 1:
+                                    light_data["attributes"][attr] = attr_value[0]
+                                else:
+                                    light_data["attributes"][attr] = list(attr_value)
+                            else:
+                                light_data["attributes"][attr] = attr_value
+                        except:
+                            pass
+
+                    # Hardcode exposure once per light in the saved JSON
+                    light_data["attributes"]["exposure"] = None
+                    for node in [light, shape]:
+                        try:
+                            attr_path = node + ".exposure"
+                            if cmds.objExists(attr_path):
+                                attr_value = cmds.getAttr(attr_path)
+                                if isinstance(attr_value, (list, tuple)):
+                                    if len(attr_value) == 1:
+                                        light_data["attributes"]["exposure"] = attr_value[0]
+                                    else:
+                                        light_data["attributes"]["exposure"] = list(attr_value)
+                                else:
+                                    light_data["attributes"]["exposure"] = attr_value
+                                break
+                        except:
+                            pass
+
+                    properties["lights"].append(light_data)
+            except:
+                pass
+
+        return properties
+
+    def get_light_snapshot(self, light):
+        """Capture keyable attributes from a light node in a simple JSON-ready format."""
+        light_node = self._resolve_light_node(light)
+        if not light_node:
+            return None
+
+        transform_node = None
+        parents = cmds.listRelatives(light_node, parent=True, fullPath=False) or []
+        if parents:
+            transform_node = parents[0]
+
+        snapshot = {"node": light_node, "transform": {}, "attrs": {}}
+
+        if transform_node:
+            transform_attrs = cmds.listAttr(transform_node, keyable=True) or []
+            for attr in transform_attrs:
+                if not (attr.startswith("translate") or attr.startswith("rotate") or attr.startswith("scale")):
+                    continue
+
+                plug = transform_node + "." + attr
+                try:
+                    value = self._normalize_attr_value(cmds.getAttr(plug, silent=True))
+                except:
+                    continue
+
+                if isinstance(value, (int, float, bool, str, list, tuple)):
+                    snapshot["transform"][attr] = value
+
+        attrs = cmds.listAttr(light_node, keyable=True) or []
+
+        for attr in attrs:
+            plug = light_node + "." + attr
+            try:
+                value = self._normalize_attr_value(cmds.getAttr(plug, silent=True))
+            except:
+                continue
+
+            if isinstance(value, (int, float, bool, str, list, tuple)):
+                snapshot["attrs"][attr] = value
+
+        return snapshot
+
+    def apply_snapshot_to_light(self, light, snapshot):
+        """Apply a previously saved snapshot to a light node."""
+        light_node = self._resolve_light_node(light)
+        if not light_node:
+            return
+
+        parents = cmds.listRelatives(light_node, parent=True, fullPath=False) or []
+        transform_node = parents[0] if parents else None
+
+        transform_attrs = snapshot.get("transform", {})
+        if transform_node:
+            for attr, value in transform_attrs.items():
+                plug = transform_node + "." + attr
+                try:
+                    if not cmds.objExists(plug):
+                        continue
+                    if not cmds.getAttr(plug, settable=True):
+                        continue
+
+                    if isinstance(value, str):
+                        cmds.setAttr(plug, value, type="string")
+                    elif isinstance(value, (list, tuple)):
+                        if len(value) > 0:
+                            cmds.setAttr(plug, *value)
+                    else:
+                        cmds.setAttr(plug, value)
+                except:
+                    pass
+
+        attrs = snapshot.get("attrs", {})
+        for attr, value in attrs.items():
+            plug = light_node + "." + attr
+            try:
+                if not cmds.objExists(plug):
+                    continue
+                if not cmds.getAttr(plug, settable=True):
+                    continue
+
+                if isinstance(value, str):
+                    cmds.setAttr(plug, value, type="string")
+                elif isinstance(value, (list, tuple)):
+                    if len(value) > 0:
+                        cmds.setAttr(plug, *value)
+                else:
+                    cmds.setAttr(plug, value)
+            except:
+                pass
 
     # ==================== Utility Methods ====================
 
@@ -469,7 +713,10 @@ class LightManagerFunctions:
                 if attr == "color":
                     cmds.setAttr(light + ".color", *value)
                 else:
-                    cmds.setAttr(light + "." + attr, value)
+                    try:
+                        cmds.setAttr(light + "." + attr, value)
+                    except:
+                        pass
 
     # ==================== Toggle Methods ====================
 
@@ -773,6 +1020,8 @@ class LightManagerTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.lm = LightManagerFunctions()
+        self._backup_temp_file = Path(tempfile.gettempdir()) / "light_manager_state.json"
+        print("Light Manager temp config:", str(self._backup_temp_file))
         self._build_ui()
         self._refresh_light_list()
 
@@ -816,6 +1065,8 @@ class LightManagerTab(QWidget):
         self.light_list.itemSelectionChanged.connect(self._on_list_selection_changed)
         left_layout.addWidget(self.light_list)
 
+        self.backUp(left_layout)
+
         content_layout.addLayout(left_layout, 1)
 
         # -- Right: scrollable controls area --
@@ -838,6 +1089,20 @@ class LightManagerTab(QWidget):
         main_layout.addLayout(content_layout)
 
     # ---- Section builders ----
+
+    def backUp(self, parent_layout):
+        """Build Save/Load state controls under the light list."""
+        row = QHBoxLayout()
+
+        btn_save_state = QPushButton("Snap state")
+        btn_save_state.clicked.connect(self._save_state)
+        row.addWidget(btn_save_state)
+
+        btn_load_state = QPushButton("Load state")
+        btn_load_state.clicked.connect(self._load_state)
+        row.addWidget(btn_load_state)
+
+        parent_layout.addLayout(row)
 
     @staticmethod
     def _make_group_box(title):
@@ -1102,7 +1367,7 @@ class LightManagerTab(QWidget):
         btn_key_int.clicked.connect(lambda: self.lm.key_attribute(".intensity"))
         int_row.addWidget(btn_key_int)
 
-        self.int_range_slider = FloatFieldSlider("", value=0, min_val=0, max_val=25)
+        self.int_range_slider = FloatFieldSlider("", value=10, min_val=0, max_val=25)
         int_row.addWidget(self.int_range_slider, 2)
 
         btn_random_int = QPushButton("Random")
@@ -1123,7 +1388,7 @@ class LightManagerTab(QWidget):
         btn_key_exp.clicked.connect(lambda: self.lm.key_attribute(".aiExposure"))
         exp_row.addWidget(btn_key_exp)
 
-        self.exp_range_slider = FloatFieldSlider("", value=0, min_val=-5, max_val=30)
+        self.exp_range_slider = FloatFieldSlider("", value=10, min_val=-5, max_val=30)
         exp_row.addWidget(self.exp_range_slider, 2)
 
         btn_random_exp = QPushButton("Random")
@@ -1205,6 +1470,87 @@ class LightManagerTab(QWidget):
         for name in lights:
             self.light_list.addItem(name)
         self.lights_count_label.setText(f"Lights: {len(lights)}")
+
+    def _save_state(self):
+        selected = cmds.ls(selection=True) or []
+        if not selected:
+            QMessageBox.warning(self, "Save state", "Select at least one light to save its state.")
+            return
+
+        payload = self.lm.collect_light_properties(selected)
+        if not payload.get("lights"):
+            QMessageBox.warning(self, "Save state", "No valid light data could be captured.")
+            return
+
+        try:
+            with self._backup_temp_file.open("w", encoding="utf-8") as backup_file:
+                json.dump(payload, backup_file, indent=2)
+            QMessageBox.information(self, "Save state", "Current light configuration saved.")
+        except Exception as e:
+            QMessageBox.warning(self, "Save state", f"Failed to save state:\n{e}")
+
+    def _load_state(self):
+        if not self._backup_temp_file.exists():
+            QMessageBox.warning(self, "Load state", "No saved temp state was found.")
+            return
+
+        selected = self.lm.get_selected_light_nodes()
+        if not selected:
+            QMessageBox.warning(self, "Load state", "Select at least one light to load state into.")
+            return
+
+        try:
+            with self._backup_temp_file.open("r", encoding="utf-8") as backup_file:
+                payload = json.load(backup_file)
+        except Exception as e:
+            QMessageBox.warning(self, "Load state", f"Failed to load state:\n{e}")
+            return
+
+        saved_lights = payload.get("lights", [])
+        if not saved_lights:
+            QMessageBox.warning(self, "Load state", "Saved state file is empty.")
+            return
+
+        if len(saved_lights) == len(selected):
+            for target_light, light_data in zip(selected, saved_lights):
+                snapshot = {
+                    "transform": light_data.get("transform", {}),
+                    "attrs": light_data.get("attributes", {})
+                }
+                self.lm.apply_snapshot_to_light(target_light, snapshot)
+            QMessageBox.information(self, "Load state", "Last saved state applied to selected lights.")
+            return
+
+        # Fallback: apply first saved light snapshot to all selected lights.
+        first_snapshot = {
+            "transform": saved_lights[0].get("transform", {}),
+            "attrs": saved_lights[0].get("attributes", {})
+        }
+        for target_light in selected:
+            self.lm.apply_snapshot_to_light(target_light, first_snapshot)
+        QMessageBox.information(
+            self,
+            "Load state",
+            "Saved state count does not match current selection. Applied first saved state to all selected lights."
+        )
+
+    def _create_backup_payload(self, snapshots):
+        """Create backup payload following the publish JSON structure style."""
+        return {
+            "_published": datetime.now().isoformat(),
+            "_asset_name": "light_manager_temp_state",
+            "version": 1,
+            "count": len(snapshots),
+            "lights": snapshots
+        }
+
+    def cleanup_backup_file(self):
+        """Delete temporary backup file when the manager closes."""
+        try:
+            if self._backup_temp_file.exists():
+                self._backup_temp_file.unlink()
+        except:
+            pass
 
     def _on_list_selection_changed(self):
         items = self.light_list.selectedItems()
@@ -1311,13 +1657,17 @@ class LightManagerWindow(MayaQWidgetBaseMixin, QWidget):
         main_layout.addWidget(title)
 
         # Content
-        main_layout.addWidget(LightManagerTab())
+        self.light_tab = LightManagerTab()
+        main_layout.addWidget(self.light_tab)
 
         # Footer
         footer = QLabel("www.miguelagenjo.com")
         footer.setAlignment(Qt.AlignCenter)
         footer.setStyleSheet("background-color: #1A1A1A; padding: 8px; font-size: 12px; color: #777777;")
         main_layout.addWidget(footer)
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
 
 
 # ==================== Application Entry Point ====================

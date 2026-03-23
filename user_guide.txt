@@ -10,11 +10,13 @@ Features:
 ---------
 - List all lights in the current scene
 - Select, rename, and delete lights
-- Adjust intensity, color, and other attributes
+- Adjust intensity, color, and other custom attributes
 - Group and organize lights
 - Scatter lights into selected objects, or create light rigs.
 - Batch edit multiple lights
-- Quick access to arnold standard shader creation.
+- Quick access to arnold utils.
+- Quick material (standarSurface) creation and clean up.
+- Save and backup lighting configuration states easily.
 
 How to Use:
 -----------
