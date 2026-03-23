@@ -1154,7 +1154,7 @@ class LightManagerTab(QWidget):
     def _build_toolbar(self, parent_layout):
         lbl = QLabel("Utils Shelf")
         lbl.setAlignment(Qt.AlignCenter)
-        lbl.setStyleSheet("background-color: #3A3A3A; padding: 3px;")
+        lbl.setStyleSheet("background-color: #4A4A4A; padding: 3px;")
         parent_layout.addWidget(lbl)
 
         shelf_layout = QHBoxLayout()
@@ -1263,7 +1263,7 @@ class LightManagerTab(QWidget):
     def _build_light_populator(self, parent_layout):
         lbl = QLabel("Light Populator")
         lbl.setAlignment(Qt.AlignCenter)
-        lbl.setStyleSheet("background-color: #3A3A3A; padding: 3px;")
+        lbl.setStyleSheet("background-color: #4A4A4A; padding: 3px;")
         lbl.setFixedHeight(20)
         parent_layout.addWidget(lbl)
 
@@ -1290,7 +1290,7 @@ class LightManagerTab(QWidget):
     def _build_light_attributes(self, parent_layout):
         lbl = QLabel("Light Attributes")
         lbl.setAlignment(Qt.AlignCenter)
-        lbl.setStyleSheet("background-color: #3A3A3A; padding: 3px;")
+        lbl.setStyleSheet("background-color: #4A4A4A; padding: 3px;")
         lbl.setFixedHeight(20)
         parent_layout.addWidget(lbl)
 
