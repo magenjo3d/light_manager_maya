@@ -40,7 +40,7 @@ from PySide2.QtWidgets import (
     QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog, QSizePolicy,
     QFrame, QGroupBox, QDialogButtonBox, QStyle
 )
-from PySide2.QtCore import Qt, Slot, Signal, QEvent, QSize
+from PySide2.QtCore import Qt, Slot, Signal, QEvent, QSize, QLocale
 from PySide2.QtGui import QFont, QColor, QIcon
 
 
@@ -153,6 +153,7 @@ class FloatFieldSlider(QWidget):
             layout.addWidget(lbl)
 
         self.field = QDoubleSpinBox()
+        self.field.setLocale(QLocale.c())
         self.field.setRange(-1e9, 1e9)
         self.field.setDecimals(decimals)
         self.field.setValue(value)
