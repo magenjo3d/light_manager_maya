@@ -1020,6 +1020,7 @@ class LightManagerTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.lm = LightManagerFunctions()
+        self._syncing_ui_from_selection = False
         self._backup_temp_file = Path(tempfile.gettempdir()) / "light_manager_state.json"
         print("Light Manager temp config:", str(self._backup_temp_file))
         self._build_ui()
@@ -1563,6 +1564,19 @@ class LightManagerTab(QWidget):
 
     def _set_ui_from_selected_light(self, light_name):
         """Set UI attribute widgets to match the selected light's current values."""
+        widgets_to_block = [
+            self.intensity_slider,
+            self.exposure_slider,
+            self.samples_slider,
+            self.temp_slider,
+            self.temp_check,
+            self.custom_value_slider,
+        ]
+
+        self._syncing_ui_from_selection = True
+        for widget in widgets_to_block:
+            widget.blockSignals(True)
+
         try:
             # Resolve shape node
             shape = self.lm._resolve_light_node(light_name)
@@ -1623,6 +1637,10 @@ class LightManagerTab(QWidget):
                 pass
         except Exception:
             pass
+        finally:
+            for widget in widgets_to_block:
+                widget.blockSignals(False)
+            self._syncing_ui_from_selection = False
 
     def _select_by_name(self):
         text = self.search_field.text().strip()
@@ -1630,6 +1648,8 @@ class LightManagerTab(QWidget):
             self.lm.select_by_name(text)
 
     def _on_color_changed(self, r, g, b):
+        if self._syncing_ui_from_selection:
+            return
         self.lm.set_color(r, g, b)
 
     def _randomize_intensity(self):
@@ -1643,10 +1663,14 @@ class LightManagerTab(QWidget):
         self.lm.randomize_exposure(base, range_val)
 
     def _on_custom_value_changed(self, value):
+        if self._syncing_ui_from_selection:
+            return
         attr_name = self.custom_attr_combo.currentText()
         self.lm.set_custom_attr(attr_name, value)
 
     def _on_custom_enable_changed(self, state):
+        if self._syncing_ui_from_selection:
+            return
         attr_name = self.custom_attr_combo.currentText()
         self.lm.enable_disable_attr(attr_name, 1 if state else 0)
 
