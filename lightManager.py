@@ -1552,12 +1552,77 @@ class LightManagerTab(QWidget):
         except:
             pass
 
+
     def _on_list_selection_changed(self):
         items = self.light_list.selectedItems()
         names = [item.text() for item in items]
         valid = [n for n in names if cmds.objExists(n)]
         if valid:
             cmds.select(valid)
+            self._set_ui_from_selected_light(valid[0])
+
+    def _set_ui_from_selected_light(self, light_name):
+        """Set UI attribute widgets to match the selected light's current values."""
+        try:
+            # Resolve shape node
+            shape = self.lm._resolve_light_node(light_name)
+            if not shape:
+                return
+
+            # Color
+            try:
+                color = cmds.getAttr(shape + ".color")[0]
+                self.color_btn.setColor(*color)
+            except Exception:
+                pass
+
+            # Intensity
+            try:
+                intensity = cmds.getAttr(shape + ".intensity")
+                self.intensity_slider.setValue(intensity)
+            except Exception:
+                pass
+
+            # Exposure
+            try:
+                exposure = cmds.getAttr(shape + ".aiExposure")
+                self.exposure_slider.setValue(exposure)
+            except Exception:
+                pass
+
+            # Samples
+            try:
+                samples = cmds.getAttr(shape + ".aiSamples")
+                self.samples_slider.setValue(samples)
+            except Exception:
+                pass
+
+            # Temperature
+            try:
+                temp = cmds.getAttr(shape + ".aiColorTemperature")
+                self.temp_slider.setValue(temp)
+            except Exception:
+                pass
+
+            # Temperature on/off
+            try:
+                temp_on = cmds.getAttr(shape + ".aiUseColorTemperature")
+                self.temp_check.setChecked(bool(temp_on))
+            except Exception:
+                pass
+
+            # Custom attribute (current combo selection)
+            try:
+                attr_name = self.custom_attr_combo.currentText()
+                if attr_name:
+                    val = cmds.getAttr(shape + "." + attr_name)
+                    if isinstance(val, (list, tuple)):
+                        val = val[0] if len(val) == 1 else val
+                    self.custom_value_slider.setValue(val)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def _select_by_name(self):
         text = self.search_field.text().strip()
