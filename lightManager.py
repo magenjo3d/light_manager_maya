@@ -1796,7 +1796,7 @@ def create_light_manager_window():
     global _current_window
 
     if not MAYA_AVAILABLE:
-        print("This tool requires Maya with PySide2 support")
+        print("This tool requires Maya with PySide2/PySide6 support")
         return None
 
     app = QApplication.instance()
