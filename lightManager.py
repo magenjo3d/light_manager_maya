@@ -16,7 +16,6 @@ from datetime import datetime
 # Maya imports
 try:
     import maya.cmds as cmds
-    import maya.OpenMayaUI as omui
     from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
     import pymel.core as pm
     MAYA_AVAILABLE = True
@@ -34,14 +33,25 @@ except ImportError:
 
 # PySide2 imports
 from PySide2.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QPushButton, QComboBox, QTextEdit, QListWidget, QListWidgetItem,
-    QMessageBox, QTabWidget, QInputDialog, QDoubleSpinBox, QSpinBox,
-    QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog, QSizePolicy,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QComboBox, QListWidget,
+    QMessageBox, QDoubleSpinBox, QSpinBox,
+    QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog,
     QFrame, QGroupBox, QDialogButtonBox, QStyle
 )
-from PySide2.QtCore import Qt, Slot, Signal, QEvent, QSize, QLocale
+from PySide2.QtCore import Qt, Signal, QEvent, QSize, QLocale
 from PySide2.QtGui import QFont, QColor, QIcon
+
+# Resolve MayaQWidgetBaseMixin base: handles both Maya 2022 (mixin without QWidget)
+# and newer Maya versions (mixin already inherits QWidget) without MRO conflicts.
+if not MAYA_AVAILABLE:
+    MayaQWidgetBaseMixin = QWidget
+
+if QWidget in getattr(MayaQWidgetBaseMixin, '__mro__', ()):
+    _WindowBase = MayaQWidgetBaseMixin
+else:
+    class _WindowBase(MayaQWidgetBaseMixin, QWidget):
+        pass
 
 
 # ==================== Stylesheet ====================
@@ -1719,7 +1729,7 @@ class LightManagerTab(QWidget):
 
 # ==================== Main Window ====================
 
-class LightManagerWindow(MayaQWidgetBaseMixin, QWidget):
+class LightManagerWindow(_WindowBase):
     """Light Manager + standalone window - Dockable"""
 
     WINDOW_NAME = "LightManagerWindow"
