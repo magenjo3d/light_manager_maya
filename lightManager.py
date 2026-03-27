@@ -1,6 +1,6 @@
 """
 Light Manager +
-(c) 2023 - Maya PySide2/Qt Version
+(c) 2023 - Maya PySide2/PySide6 Version
 Miguel Agenjo, 3D Generalist / Lighting TD
 www.miguelagenjo.com
 """
@@ -31,16 +31,31 @@ try:
 except ImportError:
     ARNOLD_AVAILABLE = False
 
-# PySide2 imports
-from PySide2.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QComboBox, QListWidget,
-    QMessageBox, QDoubleSpinBox, QSpinBox,
-    QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog,
-    QFrame, QGroupBox, QDialogButtonBox, QStyle
-)
-from PySide2.QtCore import Qt, Signal, QEvent, QSize, QLocale
-from PySide2.QtGui import QFont, QColor, QIcon
+# Qt imports – support both PySide6 (Maya 2025+) and PySide2 (Maya 2017-2024)
+try:
+    from PySide6.QtWidgets import (
+        QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+        QLabel, QPushButton, QComboBox, QListWidget,
+        QMessageBox, QDoubleSpinBox, QSpinBox,
+        QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog,
+        QFrame, QGroupBox, QDialogButtonBox, QStyle
+    )
+    from PySide6.QtCore import Qt, Signal, QEvent, QSize
+    from PySide6.QtGui import QFont, QColor, QIcon
+    try:
+        from PySide6.QtCore import QLocale
+    except ImportError:
+        QLocale = None
+except ImportError:
+    from PySide2.QtWidgets import (
+        QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+        QLabel, QPushButton, QComboBox, QListWidget,
+        QMessageBox, QDoubleSpinBox, QSpinBox,
+        QSlider, QCheckBox, QLineEdit, QScrollArea, QColorDialog,
+        QFrame, QGroupBox, QDialogButtonBox, QStyle
+    )
+    from PySide2.QtCore import Qt, Signal, QEvent, QSize, QLocale
+    from PySide2.QtGui import QFont, QColor, QIcon
 
 # Resolve MayaQWidgetBaseMixin base: handles both Maya 2022 (mixin without QWidget)
 # and newer Maya versions (mixin already inherits QWidget) without MRO conflicts.
@@ -141,7 +156,7 @@ DARK_STYLESHEET = """
 """
 
 
-# ==================== PySide2 Helper Widgets ====================
+# ==================== Qt Helper Widgets ====================
 
 class FloatFieldSlider(QWidget):
     """Float field + horizontal slider combination"""
@@ -163,7 +178,8 @@ class FloatFieldSlider(QWidget):
             layout.addWidget(lbl)
 
         self.field = QDoubleSpinBox()
-        self.field.setLocale(QLocale.c())
+        if QLocale is not None:
+            self.field.setLocale(QLocale.c())
         self.field.setRange(-1e9, 1e9)
         self.field.setDecimals(decimals)
         self.field.setValue(value)
@@ -311,7 +327,7 @@ class ColorButton(QPushButton):
             for button in button_box.buttons():
                 button.setStyleSheet(fixed_btn_style)
 
-        if dialog.exec_() == QColorDialog.Accepted:
+        if (dialog.exec() if hasattr(dialog, 'exec') else dialog.exec_()) == QColorDialog.Accepted:
             color = dialog.selectedColor()
             self._color = (color.redF(), color.greenF(), color.blueF())
             self._update_style()
@@ -1023,10 +1039,10 @@ class LightManagerFunctions:
             return False, str(e)
 
 
-# ==================== Light Manager Tab (PySide2) ====================
+# ==================== Light Manager Tab ====================
 
 class LightManagerTab(QWidget):
-    """Light Manager tab - full PySide2 port of the original cmds UI"""
+    """Light Manager tab - full PySide2/PySide6 port of the original cmds UI"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
