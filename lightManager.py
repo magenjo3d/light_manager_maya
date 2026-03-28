@@ -14,22 +14,17 @@ from pathlib import Path
 from datetime import datetime
 
 # Maya imports
-try:
-    import maya.cmds as cmds
-    import maya.mel as mel
-    from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
-    MAYA_AVAILABLE = True
-except ImportError:
-    MAYA_AVAILABLE = False
-    MayaQWidgetBaseMixin = object
+
+import maya.cmds as cmds
+import maya.mel as mel
+from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+MAYA_AVAILABLE = True
+
 
 # Arnold imports
-try:
-    import mtoa.ui.arnoldmenu as arnoldmenu
-    import mtoa.utils as mutils
-    ARNOLD_AVAILABLE = True
-except ImportError:
-    ARNOLD_AVAILABLE = False
+import mtoa.ui.arnoldmenu as arnoldmenu
+import mtoa.utils as mutils
+ARNOLD_AVAILABLE = True
 
 # Qt imports – support both PySide6 (Maya 2025+) and PySide2 (Maya 2017-2024)
 try:
