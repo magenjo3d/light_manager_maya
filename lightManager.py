@@ -16,8 +16,8 @@ from datetime import datetime
 # Maya imports
 try:
     import maya.cmds as cmds
+    import maya.mel as mel
     from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
-    import pymel.core as pm
     MAYA_AVAILABLE = True
 except ImportError:
     MAYA_AVAILABLE = False
@@ -1251,14 +1251,12 @@ class LightManagerTab(QWidget):
 
 
     def _delete_unused_nodes(self):
-
-        pm.mel.eval("MLdeleteUnused()")
+        mel.eval("MLdeleteUnused()")
  
     def _create_ai_standard_surface(self):
 
         selected_geo = cmds.ls(selection=True, type="transform")
-        node = pm.shadingNode("aiStandardSurface", asShader=True)
-        shader_name = str(node)
+        shader_name = cmds.shadingNode("aiStandardSurface", asShader=True)
 
         if selected_geo:
             shading_group = cmds.sets(renderable=True, noSurfaceShader=True, empty=True, name=shader_name + "SG")
@@ -1796,7 +1794,7 @@ def create_light_manager_window():
     global _current_window
 
     if not MAYA_AVAILABLE:
-        print("This tool requires Maya with PySide2/PySide6 support")
+        print("Missing some core maya libraries import")
         return None
 
     app = QApplication.instance()
