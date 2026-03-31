@@ -9,13 +9,11 @@ It provides a user-friendly interface for quick access to light attributes and b
 Features:
 ---------
 - List all lights in the current scene
-- Select, rename, and delete lights
-- Adjust intensity, color, and other custom attributes
-- Group and organize lights
-- Scatter lights into selected objects, or create light rigs.
-- Batch edit multiple lights
+- Select and delete lights any light in the current scene.
+- Batch edit attribures: adjust intensity, color, and other custom attributes for all your lights at once.
+- Scatter lights into selected objects, or create light rigs. Select multiple objects in the Maya outliner and click populate.
 - Quick access to arnold utils.
-- Quick material (standarSurface) creation and clean up.
+- Quick material (standarSurface) creation, asignment and scene clean up.
 - Save and backup lighting configuration states easily.
 
 How to Use:

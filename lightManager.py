@@ -1388,6 +1388,7 @@ class LightManagerTab(QWidget):
         btn_key_int.clicked.connect(lambda: self.lm.key_attribute(".intensity"))
         int_row.addWidget(btn_key_int)
 
+        int_row.addWidget(QLabel(" Range -> "))
         self.int_range_slider = FloatFieldSlider("", value=10, min_val=0, max_val=25)
         int_row.addWidget(self.int_range_slider, 2)
 
@@ -1409,6 +1410,7 @@ class LightManagerTab(QWidget):
         btn_key_exp.clicked.connect(lambda: self.lm.key_attribute(".aiExposure"))
         exp_row.addWidget(btn_key_exp)
 
+        exp_row.addWidget(QLabel(" Range -> "))
         self.exp_range_slider = FloatFieldSlider("", value=10, min_val=-5, max_val=30)
         exp_row.addWidget(self.exp_range_slider, 2)
 
@@ -1449,7 +1451,7 @@ class LightManagerTab(QWidget):
         self.custom_check.stateChanged.connect(self._on_custom_enable_changed)
         custom_row.addWidget(self.custom_check)
 
-        self.custom_value_slider = FloatFieldSlider("", value=1, min_val=0, max_val=500)
+        self.custom_value_slider = FloatFieldSlider("", value=1, min_val=0, max_val=100)
         self.custom_value_slider.valueChanged.connect(self._on_custom_value_changed)
         custom_row.addWidget(self.custom_value_slider, 1)
 
