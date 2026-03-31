@@ -3,10 +3,7 @@ Light manager Python tool for maya. Improved light manager for maya and arnold. 
 
 www.miguelagenjo.com
 
-
-
-
-![UI](https://github.com/user-attachments/assets/0ae55188-05cf-40eb-9908-c984789e9b51)
+![UI_mnger](https://github.com/user-attachments/assets/4168f9ab-f262-41d4-bc01-ae0ec366b6a1)
 
 Edit light attributes.
 ![lightattrb](https://github.com/user-attachments/assets/c3c16e04-84e9-4275-9fa5-5c176ba7f7d9)
